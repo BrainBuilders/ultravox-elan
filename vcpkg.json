@@ -1,0 +1,9 @@
+{
+  "name": "ultravox-elan",
+  "version-semver": "1.0.0",
+  "description": "UltraVox ELAN integration for live call detection.",
+  "dependencies": [
+    "portaudio",
+    "spdlog"
+  ]
+}

@@ -1,0 +1,15 @@
+# Build directories
+build/
+cmake-build-*/
+
+# IDE
+.idea/
+
+# Claude
+.claude/
+
+# Local libraries
+libs/
+
+# vcpkg installed packages (managed by vcpkg, not tracked)
+vcpkg_installed/
