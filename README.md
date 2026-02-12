@@ -30,7 +30,27 @@ Send all output (CSV + debug logs) over UDP to a remote receiver:
 
 The receiver address must be a numeric IP (not a hostname). Without `--log-target`, the detector behaves as before — CSV to stdout, debug logs to stderr.
 
-See [`tools/receiver.py`](tools/receiver.py) for a Python receiver that classifies incoming lines as CSV data or debug logs.
+### Python receiver
+
+`tools/receiver.py` is a standalone Python script (no dependencies, runs on Windows and Linux) that receives the UDP stream and classifies each line:
+
+```bash
+python tools/receiver.py --port 9999
+```
+
+Output looks like:
+
+```
+[14:23:01] CSV | Call;Device;Name;Duration (ms);Start (s);End (s);Freq (Hz);Amp
+[14:23:01] LOG | [2026-02-12 14:23:01.234] [bb-audio] [debug] Opening device ...
+[14:23:05] CSV | 1;Cage1;40-120kHz;12.3;1.234;1.246;52000;8.5
+```
+
+To also save CSV data to a file:
+
+```bash
+python tools/receiver.py --port 9999 --csv calls.csv
+```
 
 ## Output
 
