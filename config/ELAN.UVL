@@ -2,15 +2,15 @@
 LibraryVersion=1.0
 
 [Device_1]
-DevName=Pettersson M500-384kHz USB Ultr
+DevName=Pettersson u384 USB Ultrasound: Audio (hw:0,0)
 UserDevName=Cage1
 Enabled=true
 Samplerate=384000
 
 [Device_2]
-DevName=
+DevName=Pettersson M500-384kHz USB Ultr: Audio (hw:2,0)
 UserDevName=Cage2
-Enabled=false
+Enabled=true
 Samplerate=384000
 
 [Device_3]
@@ -20,6 +20,16 @@ Enabled=false
 Samplerate=384000
 
 [DefCall_1]
+Name=test
+Color=255
+MinFreq=1000
+MaxFreq=10000
+MinAmp=100
+MinDur=0.100
+MaxDur=4.000
+MinGap=0.010
+
+[DefCall_2]
 Name=18-22kHz
 Color=255
 MinFreq=18000
@@ -29,7 +39,7 @@ MinDur=0.100
 MaxDur=4.000
 MinGap=0.010
 
-[DefCall_2]
+[DefCall_3]
 Name=40-120kHz
 Color=32768
 MinFreq=40000
