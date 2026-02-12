@@ -20,6 +20,18 @@ make
 
 The argument is a `.UVL` configuration file. Stop with Ctrl+C.
 
+### Network logging
+
+Send all output (CSV + debug logs) over UDP to a remote receiver:
+
+```bash
+./ultravox-elan config/ELAN.UVL --log-target 192.168.1.50:9999
+```
+
+The receiver address must be a numeric IP (not a hostname). Without `--log-target`, the detector behaves as before — CSV to stdout, debug logs to stderr.
+
+See [`tools/receiver.py`](tools/receiver.py) for a Python receiver that classifies incoming lines as CSV data or debug logs.
+
 ## Output
 
 Semicolon-delimited CSV to stdout:
@@ -29,7 +41,7 @@ Call;Device;Name;Duration (ms);Start (s);End (s);Freq (Hz);Amp
 1;Cage1;40-120kHz;12.3;1.234;1.246;52000;8.5
 ```
 
-Log messages go to stderr.
+Debug log messages go to stderr. When `--log-target` is set, both CSV and debug logs are also sent as UDP datagrams to the specified address.
 
 ## Configuration
 
