@@ -4,16 +4,12 @@ UDP receiver for the UltraVox real-time USV (Ultrasonic Vocalization) detector. 
 
 The detector binary requires proprietary libraries and is not included in this repository. Contact [Brain Builders](https://brainbuilders.eu) for access.
 
-## Receiver
-
-`receiver.py` is a standalone Python script (no dependencies beyond the standard library, runs on Windows and Linux) that receives UDP datagrams from the detector and classifies each line as CSV call data or debug logging.
-
-### Quick start
+## Quick start
 
 1. Start the receiver:
 
 ```bash
-python receiver.py --port 9999
+python run.py
 ```
 
 2. Start the detector with network logging (on the same or a remote machine):
@@ -22,32 +18,35 @@ python receiver.py --port 9999
 ./ultravox-elan config/ELAN.UVL --log-target 192.168.1.50:9999
 ```
 
-### Output
-
-The receiver prefixes each line to distinguish call data from debug logs:
+Output:
 
 ```
-[14:23:01] CSV | Call;Device;Name;Duration (ms);Start (s);End (s);Freq (Hz);Amp
-[14:23:01] LOG | [2026-02-12 14:23:01.234] [bb-audio] [debug] Opening device ...
-[14:23:05] CSV | 1;Cage1;40-120kHz;12.3;1.234;1.246;52000;8.5
+[2026-02-12 14:23:01.234] [bb-audio] [debug] Opening device ...
+Call;Device;Name;Duration (ms);Start (s);End (s);Freq (Hz);Amp
+1;Cage1;40-120kHz;12.3;1.234;1.246;52000;8.5
 ```
 
-CSV lines match the pattern `^\d+;` (data rows) or `^Call;` (header). Everything else is debug logging.
+CSV lines are written to `calls.csv`, all messages are printed to the terminal.
 
-### Saving CSV data to a file
+## Receiver API
 
-```bash
-python receiver.py --port 9999 --csv calls.csv
+`receiver.py` provides the `Receiver` class — no dependencies beyond the standard library, runs on Windows and Linux.
+
+```python
+from receiver import Receiver
+
+def on_call(num, device, name, duration, start, end, freq, amp):
+    print(f"Call {num} on {device}: {freq} Hz")
+
+r = Receiver(port=9999)
+r.on(r"^(\d+);([^;]+);([^;]+);([^;]+);([^;]+);([^;]+);([^;]+);([^;]+)$", on_call)
+r.on(r".+", print)  # print all messages
+r.run()
 ```
 
-This writes only CSV lines (header + data) to the file. Debug logs are still printed to the terminal but not written to the file.
-
-### Options
-
-| Flag | Default | Description |
-|---|---|---|
-| `--port` | 9999 | UDP port to listen on |
-| `--csv` | — | Write CSV lines to this file |
+- **`on(pattern, callback)`** — register a regex pattern. All matching handlers are invoked per line. With capture groups: `callback(*groups)`. Without: `callback(line)`.
+- **`run()`** — blocking receive loop. Handles Ctrl+C.
+- **`stop()`** — break the loop from a callback or another thread.
 
 ## CSV format
 

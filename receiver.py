@@ -2,98 +2,102 @@
 """
 UDP receiver for ultravox-elan.
 
-Listens for UDP datagrams sent by the detector (--log-target) and classifies
-each line as CSV call data or debug logging.
+Listens for UDP datagrams sent by the detector (--log-target) and dispatches
+each line to callbacks registered by regex pattern. All matching handlers
+are invoked (not just the first).
 
-Usage:
-    python receiver.py                          # listen on port 9999
-    python receiver.py --port 5000              # custom port
-    python receiver.py --csv calls.csv          # also write CSV lines to file
+Example::
 
-Example session (two terminals):
+    from receiver import Receiver
 
-    # Terminal 1 - start the receiver
-    python receiver.py --port 9999
+    def on_call(num, device, name, duration, start, end, freq, amp):
+        print(f"Call {num} on {device}: {freq} Hz")
 
-    # Terminal 2 - start the detector with network logging
-    ./detector/build/ultravox-elan config/ELAN.UVL --log-target 127.0.0.1:9999
+    r = Receiver(port=9999)
+    r.on(r"^(\\d+);([^;]+);([^;]+);([^;]+);([^;]+);([^;]+);([^;]+);([^;]+)$", on_call)
+    r.on(r".+", print)
+    r.run()
 
-    # Receiver output:
-    # [14:23:01] CSV | Call;Device;Name;Duration (ms);Start (s);End (s);Freq (Hz);Amp
-    # [14:23:01] LOG | [2026-02-12 14:23:01.234] [bb-audio] [debug] Opening device ...
-    # [14:23:05] CSV | 1;Cage1;40-120kHz;12.3;1.234;1.246;52000;8.5
+See run.py for a ready-to-use example.
 """
 
-import argparse
-import datetime
+from __future__ import annotations
+
 import re
 import signal
 import socket
-import sys
-
-# Matches CSV header and data rows: "Call;..." or "123;..."
-CSV_PATTERN = re.compile(r"^\d+;|^Call;")
+from typing import Callable
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Receive live USV detection data from ultravox-elan over UDP.")
-    parser.add_argument("--port", type=int, default=9999,
-                        help="UDP port to listen on (default: 9999)")
-    parser.add_argument("--csv", type=str, default=None, metavar="FILE",
-                        help="write CSV lines (only) to this file")
-    args = parser.parse_args()
+class Receiver:
+    """UDP datagram receiver with pattern-based callback dispatch.
 
-    running = True
+    Each incoming UDP datagram is matched against all registered patterns
+    in order. Every matching pattern's callback is invoked with the capture
+    groups as positional arguments (*groups). If the pattern has no capture
+    groups, the full line is passed as a single argument.
+    """
 
-    def on_signal(sig, frame):
-        nonlocal running
-        running = False
+    def __init__(self, port: int = 9999, host: str = "0.0.0.0") -> None:
+        self._port = port
+        self._host = host
+        self._handlers: list[tuple[re.Pattern[str], Callable[..., None]]] = []
+        self._running = False
 
-    signal.signal(signal.SIGINT, on_signal)
-    if hasattr(signal, "SIGTERM"):
-        signal.signal(signal.SIGTERM, on_signal)
+    def on(self, pattern: str, callback: Callable[..., None]) -> None:
+        """Register a callback for lines matching a regex pattern.
 
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.bind(("0.0.0.0", args.port))
-    sock.settimeout(1.0)
+        Args:
+            pattern: Regex pattern string, tested with ``re.search``.
+            callback: Called as ``callback(*groups)`` if the pattern has
+                capture groups, or ``callback(line)`` if it has none.
+        """
+        self._handlers.append((re.compile(pattern), callback))
 
-    print(f"Listening on UDP port {args.port} ...")
+    def stop(self) -> None:
+        """Stop the receive loop."""
+        self._running = False
 
-    csv_file = None
-    if args.csv:
-        csv_file = open(args.csv, "w", encoding="utf-8")
-        print(f"Writing CSV data to {args.csv}")
+    def run(self) -> None:
+        """Block and receive datagrams until stop() is called or SIGINT/SIGTERM."""
+        self._running = True
 
-    try:
-        while running:
-            try:
-                data, addr = sock.recvfrom(4096)
-            except socket.timeout:
-                continue
-            except OSError:
-                break
+        def on_signal(sig: int, frame: object) -> None:
+            self._running = False
 
-            line = data.decode("utf-8", errors="replace").rstrip("\n")
-            if not line:
-                continue
+        prev_int = signal.signal(signal.SIGINT, on_signal)
+        prev_term = None
+        if hasattr(signal, "SIGTERM"):
+            prev_term = signal.signal(signal.SIGTERM, on_signal)
 
-            now = datetime.datetime.now().strftime("%H:%M:%S")
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.bind((self._host, self._port))
+        sock.settimeout(1.0)
 
-            if CSV_PATTERN.match(line):
-                print(f"[{now}] CSV | {line}")
-                if csv_file:
-                    csv_file.write(line + "\n")
-                    csv_file.flush()
-            else:
-                print(f"[{now}] LOG | {line}")
-    finally:
-        if csv_file:
-            csv_file.close()
-        sock.close()
-        print("\nShutdown.")
+        try:
+            while self._running:
+                try:
+                    data, addr = sock.recvfrom(4096)
+                except socket.timeout:
+                    continue
+                except OSError:
+                    break
 
+                line = data.decode("utf-8", errors="replace").rstrip("\n")
+                if not line:
+                    continue
 
-if __name__ == "__main__":
-    main()
+                for pattern, callback in self._handlers:
+                    m = pattern.search(line)
+                    if m:
+                        groups = m.groups()
+                        if groups:
+                            callback(*groups)
+                        else:
+                            callback(line)
+        finally:
+            sock.close()
+            signal.signal(signal.SIGINT, prev_int)
+            if prev_term is not None:
+                signal.signal(signal.SIGTERM, prev_term)

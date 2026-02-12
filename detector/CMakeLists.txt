@@ -21,7 +21,7 @@ find_package(portaudio CONFIG REQUIRED)
 find_package(BbAudio REQUIRED)
 find_package(Ultravox REQUIRED)
 
-add_executable(${PROJECT_NAME} src/main.cc)
+add_executable(${PROJECT_NAME} detector.cc)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Ultravox::Ultravox BbAudio::BbAudio spdlog::spdlog portaudio_static)
 
