@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
   }
 
   // Setup logging for both libraries
-  bb::audio::SetupLogger()->set_level(spdlog::level::warn);
+  bb::audio::SetupLogger()->set_level(spdlog::level::debug);
   uv::SetupLogger()->set_level(spdlog::level::debug);
 
   std::signal(SIGINT, SignalHandler);
