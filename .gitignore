@@ -1,6 +1,6 @@
 # Build directories
-build/
-cmake-build-*/
+detector/build/
+detector/cmake-build-*/
 
 # IDE
 .idea/
@@ -9,7 +9,7 @@ cmake-build-*/
 .claude/
 
 # Local libraries
-libs/
+detector/libs/
 
 # vcpkg installed packages (managed by vcpkg, not tracked)
-vcpkg_installed/
+detector/vcpkg_installed/

@@ -13,10 +13,10 @@ Usage:
 Example session (two terminals):
 
     # Terminal 1 - start the receiver
-    python tools/receiver.py --port 9999
+    python receiver.py --port 9999
 
     # Terminal 2 - start the detector with network logging
-    ./build/ultravox-elan config/ELAN.UVL --log-target 127.0.0.1:9999
+    ./detector/build/ultravox-elan config/ELAN.UVL --log-target 127.0.0.1:9999
 
     # Receiver output:
     # [14:23:01] CSV | Call;Device;Name;Duration (ms);Start (s);End (s);Freq (Hz);Amp
