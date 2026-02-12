@@ -63,6 +63,23 @@ The detector outputs semicolon-delimited CSV:
 | Freq (Hz) | 52000 | Frequency at max amplitude |
 | Amp | 8.5 | Mean amplitude |
 
+## Running at boot (systemd)
+
+An example systemd service is provided in [`config/ultravox-elan.service`](config/ultravox-elan.service). It assumes the detector binary and config are installed in `/opt/detector/`.
+
+```bash
+sudo cp config/ultravox-elan.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now ultravox-elan
+```
+
+Check status and logs:
+
+```bash
+sudo systemctl status ultravox-elan
+journalctl -u ultravox-elan -f
+```
+
 ## Configuration
 
 The detector uses `.UVL` configuration files to define devices and call definitions. See `config/ELAN.UVL` for an example.
