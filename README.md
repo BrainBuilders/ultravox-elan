@@ -35,12 +35,12 @@ CSV lines are written to `calls.csv`, all messages are printed to the terminal.
 ```python
 from receiver import Receiver
 
-def on_call(num, device, name, duration, start, end, freq, amp):
-    print(f"Call {num} on {device}: {freq} Hz")
+def on_call(num, device, name, start, end, freq, amp):
+    duration_ms = (float(end) - float(start)) * 1000
+    print(f"Call #{num} '{name}' on {device}: {freq} Hz for {duration_ms}ms (amplitude {amp})")
 
 r = Receiver(port=9999)
-r.on(r"^(\d+);([^;]+);([^;]+);([^;]+);([^;]+);([^;]+);([^;]+);([^;]+)$", on_call)
-r.on(r".+", print)  # print all messages
+r.on(r"^([^;]+);([^;]+);([^;]+);([^;]+);([^;]+);([^;]+);([^;]+)$", on_call)
 r.run()
 ```
 
@@ -57,7 +57,6 @@ The detector outputs semicolon-delimited CSV:
 | Call | 1 | Sequential call number |
 | Device | Cage1 | User-defined device name |
 | Name | 40-120kHz | Call definition name |
-| Duration (ms) | 12.3 | Call duration |
 | Start (s) | 1.234 | Start time since detection began |
 | End (s) | 1.246 | End time |
 | Freq (Hz) | 52000 | Frequency at max amplitude |

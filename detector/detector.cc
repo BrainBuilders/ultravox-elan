@@ -73,15 +73,14 @@ int main(int argc, char *argv[]) {
 
     // Load UVL file
     auto live_detection = uv::experiment::LoadLiveDetection(config_path.c_str());
-    csv->info("Call;Device;Name;Duration (ms);Start (s);End (s);Freq (Hz);Amp");
+    csv->info("Call;Device;Name;Start (s);End (s);Freq (Hz);Amp");
 
     // Detect calls
     int call_num = 0;
     live_detection->DetectCalls(
             [&](const std::string &device_name, const std::string &call_name, double start, double end,
                 double freq_at_max_amp, double mean_amp) {
-                csv->info("{};{};{};{:.1f};{:.3f};{:.3f};{:.0f};{:.1f}", ++call_num, device_name, call_name,
-                          (end - start) * 1000.0, start, end, freq_at_max_amp, mean_amp);
+                csv->info("{};{};{};{:.3f};{:.3f};{:.0f};{:.1f}", ++call_num, device_name, call_name, start, end, freq_at_max_amp, mean_amp);
             }, [&]() { return g_running.load(); });
 
     return 0;
