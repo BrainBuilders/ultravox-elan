@@ -18,14 +18,6 @@ python run.py
 ./ultravox-elan config/ELAN.UVL --log-target 192.168.1.50:9999
 ```
 
-Output:
-
-```
-[2026-02-12 14:23:01.234] [bb-audio] [debug] Opening device ...
-Call;Device;Name;Duration (ms);Start (s);End (s);Freq (Hz);Amp
-1;Cage1;40-120kHz;12.3;1.234;1.246;52000;8.5
-```
-
 CSV lines are written to `calls.csv`, all messages are printed to the terminal.
 
 ## Receiver API
@@ -35,12 +27,12 @@ CSV lines are written to `calls.csv`, all messages are printed to the terminal.
 ```python
 from receiver import Receiver
 
-def on_call(num, device, name, duration, start, end, freq, amp):
-    print(f"Call {num} on {device}: {freq} Hz")
+def save_csv(line: str) -> None:
+    open("calls.csv", "a").write(line + "\n")
 
 r = Receiver(port=9999)
-r.on(r"^(\d+);([^;]+);([^;]+);([^;]+);([^;]+);([^;]+);([^;]+);([^;]+)$", on_call)
-r.on(r".+", print)  # print all messages
+r.on(r"[^\[].*;.*", save_csv)  # CSV lines: don't start with '[', contain ';'
+r.on(r".+", print)             # print all messages
 r.run()
 ```
 
@@ -49,8 +41,6 @@ r.run()
 - **`stop()`** — break the loop from a callback or another thread.
 
 ## CSV format
-
-The detector outputs semicolon-delimited CSV:
 
 | Field | Example | Description |
 |---|---|---|
@@ -71,13 +61,6 @@ An example systemd service is provided in [`config/ultravox-elan.service`](confi
 sudo cp config/ultravox-elan.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now ultravox-elan
-```
-
-Check status and logs:
-
-```bash
-sudo systemctl status ultravox-elan
-journalctl -u ultravox-elan -f
 ```
 
 ## Configuration
