@@ -13,3 +13,9 @@ detector/libs/
 
 # vcpkg installed packages (managed by vcpkg, not tracked)
 detector/vcpkg_installed/
+
+# Python
+__pycache__/
+
+# Output
+*.csv

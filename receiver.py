@@ -81,7 +81,7 @@ class Receiver:
                     data, addr = sock.recvfrom(4096)
                 except socket.timeout:
                     continue
-                except OSError:
+                except (OSError, KeyboardInterrupt):
                     break
 
                 line = data.decode("utf-8", errors="replace").rstrip("\n")
@@ -93,7 +93,10 @@ class Receiver:
                     if m:
                         groups = m.groups()
                         if groups:
-                            callback(*groups)
+                            if len(groups) == 1:
+                                callback(groups[0])
+                            else:
+                                callback(*groups[1:])
                         else:
                             callback(line)
         finally:
