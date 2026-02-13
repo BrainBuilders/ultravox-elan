@@ -19,13 +19,14 @@ int main(int argc, char *argv[]) {
 
     // Parse command-line arguments
     if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <file.uvl> [--log-target <ip:port>]\n";
+        std::cerr << "Usage: " << argv[0] << " <file.uvl> [--log-target <ip:port>] [--debug]\n";
         return 1;
     }
 
     std::string config_path = argv[1];
     std::string log_host;
     uint16_t log_port = 0;
+    bool debug = false;
     for (int i = 2; i < argc; ++i) {
         if (std::strcmp(argv[i], "--log-target") == 0 && i + 1 < argc) {
             std::string target = argv[++i];
@@ -36,6 +37,8 @@ int main(int argc, char *argv[]) {
             }
             log_host = target.substr(0, colon);
             log_port = static_cast<uint16_t>(std::stoi(target.substr(colon + 1)));
+        } else if (std::strcmp(argv[i], "--debug") == 0) {
+            debug = true;
         } else {
             std::cerr << "Unknown argument: " << argv[i] << "\n";
             return 1;
@@ -63,8 +66,8 @@ int main(int argc, char *argv[]) {
     csv->set_pattern("%v");
 
     // Set log levels
-    audio_logger->set_level(spdlog::level::debug);
-    uv_logger->set_level(spdlog::level::debug);
+    audio_logger->set_level(debug ? spdlog::level::debug : spdlog::level::info);
+    uv_logger->set_level(debug ? spdlog::level::trace : spdlog::level::info);
     csv->set_level(spdlog::level::info);
 
     // Handle signals for graceful shutdown

@@ -13,7 +13,7 @@ Description=UltraVox ELAN live USV detector
 After=network.target sound.target
 
 [Service]
-ExecStart=/opt/ultravox-elan /opt/ELAN.UVL --log-target 192.168.1.7:9999
+ExecStart=/opt/ultravox-elan /opt/ELAN.UVL --log-target 10.0.0.1:9999
 WorkingDirectory=/opt/
 Restart=on-failure
 RestartSec=5

@@ -93,10 +93,7 @@ class Receiver:
                     if m:
                         groups = m.groups()
                         if groups:
-                            if len(groups) == 1:
-                                callback(groups[0])
-                            else:
-                                callback(*groups[1:])
+                            callback(*groups)
                         else:
                             callback(line)
         finally:
