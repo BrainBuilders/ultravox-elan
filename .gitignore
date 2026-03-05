@@ -1,6 +1,7 @@
 # Build directories
 detector/build/
 detector/cmake-build-*/
+cmake-build-*/
 
 # IDE
 .idea/
@@ -19,3 +20,6 @@ __pycache__/
 
 # Output
 *.csv
+
+# Benchmark results (generated, not tracked)
+benchmark/results/*.csv
