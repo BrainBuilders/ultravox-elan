@@ -78,23 +78,22 @@ int main(int argc, char *argv[]) {
 
     if (method == uv::experiment::DetectionMethod::USVSEG) {
         csv->info("Call;Device;Name;Start (s);End (s);Freq (Hz);Entropy;Sigma");
-        live_detection->DetectCallsUSV(
-                [&](const std::string &device_name, const std::string &call_name, double start, double end,
-                    double peak_freq_hz, double wiener_entropy, double noise_sigma) {
-                    csv->info("{};{};{};{:.3f};{:.3f};{:.0f};{:.4f};{:.2f}", ++call_num, device_name, call_name, start,
-                              end, peak_freq_hz, wiener_entropy, noise_sigma);
-                },
-                [&]() { return g_running.load(); });
     } else {
         csv->info("Call;Device;Name;Start (s);End (s);Freq (Hz);Amp");
-        live_detection->DetectCalls(
-                [&](const std::string &device_name, const std::string &call_name, double start, double end,
-                    double freq_at_max_amp, double mean_amp) {
-                    csv->info("{};{};{};{:.3f};{:.3f};{:.0f};{:.1f}", ++call_num, device_name, call_name, start, end,
-                              freq_at_max_amp, mean_amp);
-                },
-                [&]() { return g_running.load(); });
     }
+
+    live_detection->DetectCalls(
+            [&](const uv::experiment::ILiveDetection::DetectedCall &call) {
+                if (method == uv::experiment::DetectionMethod::USVSEG) {
+                    csv->info("{};{};{};{:.3f};{:.3f};{:.0f};{:.4f};{:.2f}", ++call_num, call.device_name,
+                              call.call_name, call.start_time, call.end_time, call.peak_freq_hz, call.wiener_entropy,
+                              call.noise_sigma);
+                } else {
+                    csv->info("{};{};{};{:.3f};{:.3f};{:.0f};{:.1f}", ++call_num, call.device_name, call.call_name,
+                              call.start_time, call.end_time, call.peak_freq_hz, call.mean_amp);
+                }
+            },
+            [&]() { return g_running.load(); });
 
     return 0;
 }

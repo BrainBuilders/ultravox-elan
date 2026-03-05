@@ -21,24 +21,18 @@ static void PrintUsage(const char *prog) {
 }
 
 /// Run USVSEG detection on a pre-loaded track.
-/// Uses USVDetector directly for deterministic offline processing.
 static void DetectUSVSEG(bb::audio::TrackPtr track, const std::string &device_name,
                          const std::vector<uv::audio::CallDef> &audio_call_defs, int fft_size,
                          std::shared_ptr<spdlog::logger> csv, int &call_num) {
-    // Create the same USVAnalyzer used by the streaming path
     auto usv_analyzer = uv::audio::CreateUSVAnalyzer(fft_size);
     usv_analyzer->SetTrack(track);
     usv_analyzer->SetCallDefs(audio_call_defs);
 
-    // Run the detection loop; for a file-based track all data is available immediately.
-    // The loop processes everything, then idles until should_continue returns false.
-    // We track processed time and stop once the file is fully consumed.
     std::atomic<bool> done{false};
     double track_end = track->EndTime();
 
-    usv_analyzer->DetectCallsContinuouslyUSV(
+    usv_analyzer->DetectContinuously(
             [&](const uv::audio::USVCall &call, const std::string &name) {
-                // Check if we've passed the end of the file
                 if (call.end_time >= track_end - 0.01) {
                     done = true;
                 }
