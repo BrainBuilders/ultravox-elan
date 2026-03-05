@@ -20,47 +20,6 @@ static void PrintUsage(const char *prog) {
               << "DetectionMethod field in the UVL [Control] section.\n";
 }
 
-/// Run USVSEG detection on a pre-loaded track.
-static void DetectUSVSEG(bb::audio::TrackPtr track, const std::string &device_name,
-                         const std::vector<uv::audio::CallDef> &audio_call_defs, int fft_size,
-                         std::shared_ptr<spdlog::logger> csv, int &call_num) {
-    auto usv_analyzer = uv::audio::CreateUSVAnalyzer(fft_size);
-    usv_analyzer->SetTrack(track);
-    usv_analyzer->SetCallDefs(audio_call_defs);
-
-    std::atomic<bool> done{false};
-    double track_end = track->EndTime();
-
-    usv_analyzer->DetectContinuously(
-            [&](const uv::audio::USVCall &call, const std::string &name) {
-                if (call.end_time >= track_end - 0.01) {
-                    done = true;
-                }
-                csv->info("{};{};{};{:.3f};{:.3f};{:.0f};{:.4f};{:.2f}", ++call_num, device_name, name,
-                          call.start_time, call.end_time, call.peak_freq_hz, call.wiener_entropy, call.noise_sigma);
-            },
-            [&]() { return !done.load(); });
-}
-
-/// Run threshold detection on a pre-loaded track using the standard file-based API.
-static void DetectThreshold(bb::audio::TrackPtr track, const std::string &device_name,
-                            const std::vector<uv::experiment::CallDefPtr> &call_defs,
-                            const std::vector<uv::audio::CallDef> &audio_call_defs, int fft_size, float overlap,
-                            std::shared_ptr<spdlog::logger> csv, int &call_num) {
-    auto analyzer = uv::audio::CreateCallDetectionAnalyzer(audio_call_defs);
-    analyzer->SetTrack(track);
-
-    analyzer->DetectCalls(
-            fft_size, overlap,
-            [&](const uv::audio::Call &call) {
-                std::string call_name =
-                        call.call_def_id < static_cast<int>(call_defs.size()) ? call_defs[call.call_def_id]->GetName() : "Unknown";
-                csv->info("{};{};{};{:.3f};{:.3f};{:.0f};{:.1f}", ++call_num, device_name, call_name, call.start_time,
-                          call.end_time, call.freq_at_max_amp, call.mean_amp);
-            },
-            nullptr);
-}
-
 int main(int argc, char *argv[]) {
     if (argc < 3) {
         PrintUsage(argv[0]);
@@ -132,21 +91,39 @@ int main(int argc, char *argv[]) {
               << "Duration: " << duration << " s\n"
               << "Call definitions: " << call_defs.size() << "\n";
 
-    // Use the WAV filename as device name (similar to streaming device name)
+    // Use the WAV filename as device name
     std::filesystem::path wav_fs(wav_path);
     std::string device_name = wav_fs.stem().string();
 
     int call_num = 0;
     int fft_size = 512;
     float overlap = 0.5f;
+    bool is_usvseg = (method == uv::experiment::DetectionMethod::USVSEG);
 
-    if (method == uv::experiment::DetectionMethod::USVSEG) {
+    if (is_usvseg) {
         csv->info("Call;Device;Name;Start (s);End (s);Freq (Hz);Entropy;Sigma");
-        DetectUSVSEG(track, device_name, audio_call_defs, fft_size, csv, call_num);
     } else {
         csv->info("Call;Device;Name;Start (s);End (s);Freq (Hz);Amp");
-        DetectThreshold(track, device_name, call_defs, audio_call_defs, fft_size, overlap, csv, call_num);
     }
+
+    auto analyzer = uv::audio::CreateAnalyzer(audio_call_defs, method);
+    analyzer->SetTrack(track);
+
+    analyzer->DetectCalls(
+            fft_size, overlap,
+            [&](const uv::audio::Call &call) {
+                std::string call_name = call.call_def_id < static_cast<int>(call_defs.size())
+                                                ? call_defs[call.call_def_id]->GetName()
+                                                : "Unknown";
+                if (is_usvseg) {
+                    csv->info("{};{};{};{:.3f};{:.3f};{:.0f};{:.4f};{:.2f}", ++call_num, device_name, call_name,
+                              call.start_time, call.end_time, call.peak_freq_hz, call.wiener_entropy, call.noise_sigma);
+                } else {
+                    csv->info("{};{};{};{:.3f};{:.3f};{:.0f};{:.1f}", ++call_num, device_name, call_name,
+                              call.start_time, call.end_time, call.peak_freq_hz, call.mean_amp);
+                }
+            },
+            nullptr);
 
     std::cerr << "Detected " << call_num << " calls\n";
 
