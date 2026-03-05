@@ -81,7 +81,7 @@ class Receiver:
                     data, addr = sock.recvfrom(4096)
                 except socket.timeout:
                     continue
-                except OSError:
+                except (OSError, KeyboardInterrupt):
                     break
 
                 line = data.decode("utf-8", errors="replace").rstrip("\n")

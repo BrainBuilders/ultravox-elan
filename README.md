@@ -35,7 +35,7 @@ CSV lines are written to `calls.csv`, all messages are printed to the terminal.
 ```python
 from receiver import Receiver
 
-def on_call(num, device, name, start, end, freq, amp):
+def on_call(line_, num, device, name, start, end, freq, amp):
     duration_ms = (float(end) - float(start)) * 1000
     print(f"Call #{num} '{name}' on {device}: {freq} Hz for {duration_ms}ms (amplitude {amp})")
 
@@ -44,45 +44,54 @@ r.on(r"^([^;]+);([^;]+);([^;]+);([^;]+);([^;]+);([^;]+);([^;]+)$", on_call)
 r.run()
 ```
 
-- **`on(pattern, callback)`** — register a regex pattern. All matching handlers are invoked per line. With capture groups: `callback(*groups)`. Without: `callback(line)`.
-- **`run()`** — blocking receive loop. Handles Ctrl+C.
-- **`stop()`** — break the loop from a callback or another thread.
+- **`on(pattern, callback)`**: register a regex pattern. All matching handlers are invoked per line. Each captured group will be an argument, the whole match is always the first group.
+- **`run()`**: blocking receive loop. Handles Ctrl+C.
+- **`stop()`**: break the loop from a callback or another thread.
 
 ## CSV format
 
 The detector outputs semicolon-delimited CSV:
 
-| Field | Example | Description |
-|---|---|---|
-| Call | 1 | Sequential call number |
-| Device | Cage1 | User-defined device name |
-| Name | 40-120kHz | Call definition name |
-| Start (s) | 1.234 | Start time since detection began |
-| End (s) | 1.246 | End time |
-| Freq (Hz) | 52000 | Frequency at max amplitude |
-| Amp | 8.5 | Mean amplitude |
+| Field     | Example  | Description                      |
+|-----------|----------|----------------------------------|
+| Call      | 1        | Sequential call number           |
+| Device    | Cage1    | User-defined device name         |
+| Name      | Distress | Call definition name             |
+| Start (s) | 1.234    | Start time since detection began |
+| End (s)   | 1.246    | End time                         |
+| Freq (Hz) | 52000    | Frequency at max amplitude       |
+| Amp       | 8.5      | Mean amplitude                   |
 
-## Running at boot (systemd)
+## Connecting a Windows PC to the USV detector
 
-An example systemd service is provided in [`config/ultravox-elan.service`](config/ultravox-elan.service). It assumes the detector binary and config are installed in `/opt/detector/`.
+The detector is powered over Ethernet (PoE) and sends detected calls over the same cable to the Windows PC.
 
-```bash
-sudo cp config/ultravox-elan.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now ultravox-elan
-```
+### What you need
 
-Check status and logs:
+- A Windows PC with Python installed
+- A USB-to-Ethernet adapter
+- An Ethernet cable
+- A PoE injector (or PoE switch/router)
+- The USV detector
 
-```bash
-sudo systemctl status ultravox-elan
-journalctl -u ultravox-elan -f
-```
+### Setup
 
-## Configuration
+1. Connect the USB-to-Ethernet adapter to your PC, the adapter to the PoE injector's **data** port, and the injector's **PoE** port to the detector.
 
-The detector uses `.UVL` configuration files to define devices and call definitions. See `config/ELAN.UVL` for an example.
+2. Set up networking using the included [DHCP server](tools/README.md). This gives your PC the IP `10.0.0.1` and assigns `10.0.0.100` to the detector.
 
-## Detector source
+3. Allow UDP through the firewall (once, as Administrator):
+   ```
+   netsh advfirewall firewall add rule name="UltraVox ELAN" dir=in action=allow protocol=UDP localport=9999
+   ```
 
-The C++ detector source is in [`detector/`](detector/). It requires the proprietary `bb-audio` and `ultravox-sdk` libraries to build.
+4. Run the receiver:
+   ```
+   python run.py
+   ```
+
+The detector starts automatically and sends data to `10.0.0.1:9999`. Detected calls appear in the terminal and are saved to `calls.csv`.
+
+## Detector
+
+The C++ detector source and documentation is in [`detector/`](detector/README.md).
