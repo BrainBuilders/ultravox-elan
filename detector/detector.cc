@@ -16,7 +16,6 @@ static std::atomic<bool> g_running{true};
 static void SignalHandler(int) { g_running = false; }
 
 int main(int argc, char *argv[]) {
-
     // Parse command-line arguments
     if (argc < 2) {
         std::cerr << "Usage: " << argv[0] << " <file.uvl> [--log-target <ip:port>]\n";
@@ -73,15 +72,29 @@ int main(int argc, char *argv[]) {
 
     // Load UVL file
     auto live_detection = uv::experiment::LoadLiveDetection(config_path.c_str());
-    csv->info("Call;Device;Name;Start (s);End (s);Freq (Hz);Amp");
+    auto method = live_detection->GetDetectionMethod();
 
-    // Detect calls
     int call_num = 0;
-    live_detection->DetectCalls(
-            [&](const std::string &device_name, const std::string &call_name, double start, double end,
-                double freq_at_max_amp, double mean_amp) {
-                csv->info("{};{};{};{:.3f};{:.3f};{:.0f};{:.1f}", ++call_num, device_name, call_name, start, end, freq_at_max_amp, mean_amp);
-            }, [&]() { return g_running.load(); });
+
+    if (method == uv::experiment::DetectionMethod::USVSEG) {
+        csv->info("Call;Device;Name;Start (s);End (s);Freq (Hz);Entropy;Sigma");
+        live_detection->DetectCallsUSV(
+                [&](const std::string &device_name, const std::string &call_name, double start, double end,
+                    double peak_freq_hz, double wiener_entropy, double noise_sigma) {
+                    csv->info("{};{};{};{:.3f};{:.3f};{:.0f};{:.4f};{:.2f}", ++call_num, device_name, call_name, start,
+                              end, peak_freq_hz, wiener_entropy, noise_sigma);
+                },
+                [&]() { return g_running.load(); });
+    } else {
+        csv->info("Call;Device;Name;Start (s);End (s);Freq (Hz);Amp");
+        live_detection->DetectCalls(
+                [&](const std::string &device_name, const std::string &call_name, double start, double end,
+                    double freq_at_max_amp, double mean_amp) {
+                    csv->info("{};{};{};{:.3f};{:.3f};{:.0f};{:.1f}", ++call_num, device_name, call_name, start, end,
+                              freq_at_max_amp, mean_amp);
+                },
+                [&]() { return g_running.load(); });
+    }
 
     return 0;
 }
