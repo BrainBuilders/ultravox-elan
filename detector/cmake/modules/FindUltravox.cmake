@@ -8,17 +8,23 @@ if(NOT TARGET Ultravox::Ultravox)
         )
     endif()
 
-    # Also search relative to this project (sibling directory)
+    # Check sibling directory first (local build)
     set(ULTRAVOX_SIBLING_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../ultravox-sdk")
+    find_library(ULTRAVOX_LIBRARY NAMES ultravox
+        HINTS "${ULTRAVOX_SIBLING_DIR}/build"
+        NO_DEFAULT_PATH
+    )
+    find_path(ULTRAVOX_INCLUDE_DIR NAMES ultravox/ultravox.h
+        HINTS "${ULTRAVOX_SIBLING_DIR}/include"
+        NO_DEFAULT_PATH
+    )
 
-    # Find library and include paths
+    # Fall back to system / Windows paths
     find_library(ULTRAVOX_LIBRARY NAMES ultravox
         PATHS ${WINDOWS_SEARCH_DIRS}
-        HINTS "${ULTRAVOX_SIBLING_DIR}/build"
     )
     find_path(ULTRAVOX_INCLUDE_DIR NAMES ultravox/ultravox.h
         PATHS ${WINDOWS_SEARCH_DIRS}
-        HINTS "${ULTRAVOX_SIBLING_DIR}/include"
     )
 
     include(FindPackageHandleStandardArgs)
