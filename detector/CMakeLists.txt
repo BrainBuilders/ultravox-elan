@@ -22,7 +22,9 @@ find_package(BbAudio REQUIRED)
 find_package(Ultravox REQUIRED)
 
 add_executable(${PROJECT_NAME} detector.cc)
-
 target_link_libraries(${PROJECT_NAME} PRIVATE Ultravox::Ultravox BbAudio::BbAudio spdlog::spdlog portaudio_static)
 
-install(TARGETS ${PROJECT_NAME} DESTINATION bin)
+add_executable(${PROJECT_NAME}-file detector_file.cc)
+target_link_libraries(${PROJECT_NAME}-file PRIVATE Ultravox::Ultravox BbAudio::BbAudio spdlog::spdlog portaudio_static)
+
+install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}-file DESTINATION bin)

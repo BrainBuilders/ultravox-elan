@@ -1,7 +1,31 @@
 if(NOT TARGET BbAudio::BbAudio)
-    # Find library and include paths
-    find_library(BBAUDIO_LIBRARY NAMES bb-audio)
-    find_path(BBAUDIO_INCLUDE_DIR NAMES bb/audio.h)
+    # Set common directories for Windows
+    if(WIN32)
+        set(WINDOWS_SEARCH_DIRS
+                "C:/Program Files/bb-audio"
+                "C:/Program Files (x86)/bb-audio"
+                "C:/bb-audio"
+        )
+    endif()
+
+    # Check sibling directory first (local build)
+    set(BBAUDIO_SIBLING_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../bb-audio")
+    find_library(BBAUDIO_LIBRARY NAMES bb-audio
+        HINTS "${BBAUDIO_SIBLING_DIR}/build"
+        NO_DEFAULT_PATH
+    )
+    find_path(BBAUDIO_INCLUDE_DIR NAMES bb/audio.h
+        HINTS "${BBAUDIO_SIBLING_DIR}/include"
+        NO_DEFAULT_PATH
+    )
+
+    # Fall back to system / Windows paths
+    find_library(BBAUDIO_LIBRARY NAMES bb-audio
+        PATHS ${WINDOWS_SEARCH_DIRS}
+    )
+    find_path(BBAUDIO_INCLUDE_DIR NAMES bb/audio.h
+        PATHS ${WINDOWS_SEARCH_DIRS}
+    )
 
     include(FindPackageHandleStandardArgs)
     find_package_handle_standard_args(BbAudio DEFAULT_MSG BBAUDIO_LIBRARY BBAUDIO_INCLUDE_DIR)
