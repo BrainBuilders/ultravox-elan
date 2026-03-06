@@ -34,32 +34,29 @@ Data from Zenodo record [3428024](https://doi.org/10.5281/zenodo.3428024), CC BY
 | Method | Detected | TP | FP | FN | Precision | Recall | F1 |
 |--------|----------|----|----|----|-----------|--------|------|
 | UltraVox Threshold | 113 | 95 | 18 | 205 | 0.841 | 0.317 | 0.460 |
-| UltraVox USVSEG | 76 | 55 | 21 | 245 | 0.724 | 0.183 | 0.293 |
-| Original USVSEG | 209 | 200 | 9 | 100 | 0.957 | 0.667 | 0.786 |
+| UltraVox USVSEG | 206 | 197 | 9 | 103 | 0.956 | 0.657 | **0.779** |
+| Original USVSEG | 209 | 200 | 9 | 100 | 0.957 | 0.667 | **0.786** |
 
 ### rat_distressed (22-kHz calls, 155 ground truth)
 
 | Method | Detected | TP | FP | FN | Precision | Recall | F1 |
 |--------|----------|----|----|----|-----------|--------|------|
 | UltraVox Threshold | 188 | 153 | 35 | 2 | 0.814 | 0.987 | 0.892 |
-| UltraVox USVSEG | 298 | 125 | 173 | 30 | 0.419 | 0.806 | 0.552 |
-| Original USVSEG | 153 | 152 | 1 | 3 | 0.993 | 0.981 | 0.987 |
+| UltraVox USVSEG | 153 | 152 | 1 | 3 | 0.993 | 0.981 | **0.987** |
+| Original USVSEG | 153 | 152 | 1 | 3 | 0.993 | 0.981 | **0.987** |
 
 ### Key Observations
 
-**rat_distressed (22-kHz)** -- the primary use case for ELAN:
-- The UltraVox Threshold detector achieves strong results (F1=0.892), with
-  near-perfect recall (0.987) at the cost of some false positives.
-- The UltraVox USVSEG implementation over-detects significantly (298 vs 155 GT),
-  producing many false positives and lower precision (0.419).
-- The original USVSEG algorithm is near-perfect (F1=0.987).
+**rat_distressed (22-kHz)**:
+- UltraVox USVSEG matches the original algorithm exactly (F1=0.987).
+- The Threshold detector has strong recall (0.987) but lower precision due to
+  false positives.
 
 **rat_pleasant (50-kHz)**:
-- All UltraVox methods have low recall (<0.32), detecting far fewer calls than
-  exist in the ground truth. The frequency band and parameter tuning likely
-  need adjustment.
-- The original USVSEG achieves the best balance (F1=0.786) but also misses a
-  third of calls.
+- UltraVox USVSEG closely matches the original (F1=0.779 vs 0.786). The
+  remaining gap is 3 borderline calls at the 5ms minimum duration boundary.
+- Both USVSEG implementations miss about a third of calls, which is a known
+  limitation of the algorithm for short, faint vocalizations.
 
 ## Running the Benchmark
 
