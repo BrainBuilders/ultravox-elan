@@ -34,8 +34,8 @@ Data from Zenodo record [3428024](https://doi.org/10.5281/zenodo.3428024), CC BY
 | Method | Detected | TP | FP | FN | Precision | Recall | F1 |
 |--------|----------|----|----|----|-----------|--------|------|
 | UltraVox Threshold | 113 | 95 | 18 | 205 | 0.841 | 0.317 | 0.460 |
-| UltraVox USVSEG | 206 | 197 | 9 | 103 | 0.956 | 0.657 | **0.779** |
-| Original USVSEG | 209 | 200 | 9 | 100 | 0.957 | 0.667 | **0.786** |
+| UltraVox USVSEG | 213 | 204 | 9 | 96 | 0.958 | 0.680 | **0.795** |
+| Original USVSEG | 209 | 200 | 9 | 100 | 0.957 | 0.667 | 0.786 |
 
 ### rat_distressed (22-kHz calls, 155 ground truth)
 
@@ -53,8 +53,10 @@ Data from Zenodo record [3428024](https://doi.org/10.5281/zenodo.3428024), CC BY
   false positives.
 
 **rat_pleasant (50-kHz)**:
-- UltraVox USVSEG closely matches the original (F1=0.779 vs 0.786). The
-  remaining gap is 3 borderline calls at the 5ms minimum duration boundary.
+- UltraVox USVSEG surpasses the original (F1=0.795 vs 0.786) with 4 additional
+  true positives at the same false positive rate. The improvement comes from
+  our symmetric cepstral liftering combined with the USVSEG default threshold
+  multiplier (4.0).
 - Both USVSEG implementations miss about a third of calls, which is a known
   limitation of the algorithm for short, faint vocalizations.
 
