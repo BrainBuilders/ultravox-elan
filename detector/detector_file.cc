@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
     bool is_usvseg = (method == uv::experiment::DetectionMethod::USVSEG);
 
     if (is_usvseg) {
-        csv->info("Call;Device;Name;Start (s);End (s);Freq (Hz);Entropy;Sigma");
+        csv->info("Call;Device;Name;Start (s);End (s);Freq (Hz);Entropy;ActiveBins;Sigma");
     } else {
         csv->info("Call;Device;Name;Start (s);End (s);Freq (Hz);Amp");
     }
@@ -116,8 +116,9 @@ int main(int argc, char *argv[]) {
                                                 ? call_defs[call.call_def_id]->GetName()
                                                 : "Unknown";
                 if (is_usvseg) {
-                    csv->info("{};{};{};{:.3f};{:.3f};{:.0f};{:.4f};{:.2f}", ++call_num, device_name, call_name,
-                              call.start_time, call.end_time, call.peak_freq_hz, call.wiener_entropy, call.noise_sigma);
+                    csv->info("{};{};{};{:.3f};{:.3f};{:.0f};{:.4f};{:.1f};{:.2f}", ++call_num, device_name, call_name,
+                              call.start_time, call.end_time, call.peak_freq_hz, call.wiener_entropy,
+                              call.mean_active_bins, call.noise_sigma);
                 } else {
                     csv->info("{};{};{};{:.3f};{:.3f};{:.0f};{:.1f}", ++call_num, device_name, call_name,
                               call.start_time, call.end_time, call.peak_freq_hz, call.mean_amp);

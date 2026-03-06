@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
     int call_num = 0;
 
     if (method == uv::experiment::DetectionMethod::USVSEG) {
-        csv_logger->info("Call;Device;Name;Start (s);End (s);Freq (Hz);Entropy;Sigma");
+        csv_logger->info("Call;Device;Name;Start (s);End (s);Freq (Hz);Entropy;ActiveBins;Sigma");
     } else {
         csv_logger->info("Call;Device;Name;Start (s);End (s);Freq (Hz);Amp");
     }
@@ -88,9 +88,9 @@ int main(int argc, char *argv[]) {
     live_detection->DetectCalls(
             [&](const uv::experiment::ILiveDetection::DetectedCall &call) {
                 if (method == uv::experiment::DetectionMethod::USVSEG) {
-                    csv_logger->info("{};{};{};{:.3f};{:.3f};{:.0f};{:.4f};{:.2f}", ++call_num, call.device_name,
+                    csv_logger->info("{};{};{};{:.3f};{:.3f};{:.0f};{:.4f};{:.1f};{:.2f}", ++call_num, call.device_name,
                               call.call_name, call.start_time, call.end_time, call.peak_freq_hz, call.wiener_entropy,
-                              call.noise_sigma);
+                              call.mean_active_bins, call.noise_sigma);
                 } else {
                     csv_logger->info("{};{};{};{:.3f};{:.3f};{:.0f};{:.1f}", ++call_num, call.device_name, call.call_name,
                               call.start_time, call.end_time, call.peak_freq_hz, call.mean_amp);
